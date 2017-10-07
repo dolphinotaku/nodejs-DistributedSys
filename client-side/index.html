@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div>
+    <input type="text" name="loginId" id="loginId" value="test">
+  </div>
+  <div>
+    <input type="text" name="password" id="password" value="pwd">
+  </div>
+  <button type="button" onclick="login()">Login</button>
+
+  <div id="rooms">
+
+  </div>
+</body>
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io();
+  
+  // setInterval(function(){
+    // socket.emit('client',new Date().getTime());
+  // }, 1000);
+  function login(){
+    var loginId = document.getElementById('loginId').value;
+    var password = document.getElementById('password').value;
+    var account = {'id':loginId, 'password': password};
+    console.log(account);
+
+    socket.emit('login', account, function(resp){
+    console.log(resp);
+    if(resp.success){
+      alert('Login success');
+    }else{
+      alert('Login Fail');
+    }
+  });
+
+  }
+
+  socket.emit('rooms-update', [{'id':1, 'isBooked':true}, {'id':2, 'isBooked':false}], function(resp){
+    console.log(resp);
+  });
+
+  socket.on('rooms', function(rooms){
+    document.getElementById('rooms').innerHTML = JSON.stringify(rooms);
+  })
+
+  
+</script>
+</html>
