@@ -1,3 +1,14 @@
 body{
     font-size: 20px;
 }
+
+#rooms{
+    width: 100%;
+}
+#rooms .booked{
+    color: #ff0000;
+}
+
+.text-center{
+    text-align: center;
+}

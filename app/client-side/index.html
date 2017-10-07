@@ -6,6 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="lib/mustache/mustache.min.js"></script>
 </head>
 <body>
   <div>
@@ -16,9 +17,42 @@
   </div>
   <button type="button" onclick="login()">Login</button>
 
-  <div id="rooms">
+  <div id="rooms-container">
 
   </div>
+  <script id="rooms-view-template" type="x-tmpl-mustache">
+      <table id="rooms">
+          <tr>
+            <th>ID</th>
+            <th>Code</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+          {{#rooms}}
+          <tr>
+            <td>{{id}}</td>
+            <td>{{code}}</td>
+            <td>
+              {{#isBooked}}
+                <span class="booked">booked</span>
+              {{/isBooked}}
+              {{^isBooked}}
+                <span>available</span>
+              {{/isBooked}}
+            </td>
+            <td class="text-center">
+              {{#canCancel}}
+              <button type="button" onclick="cancelRoomBooking({{id}})">Cancel</button>
+              {{/canCancel}}
+                {{^isBooked}}
+              <button type="button" onclick="bookRoom({{id}})">Book</button>
+                {{/isBooked}}
+            </td>
+          </tr>
+          {{/rooms}}
+        </table>
+  </script>
+
 </body>
 
 
@@ -36,22 +70,75 @@
     console.log(account);
 
     socket.emit('login', account, function(resp){
-    console.log(resp);
-    if(resp.success){
-      alert('Login success');
-    }else{
-      alert('Login Fail');
-    }
-  });
-
+      console.log(resp);
+      if(resp.success){
+        alert('Login success');
+      }else{
+        alert('Login Fail');
+      }
+    });
   }
 
-  socket.emit('rooms-update', [{'id':1, 'isBooked':true}, {'id':2, 'isBooked':false}], function(resp){
-    console.log(resp);
-  });
+  function bookRoom(id){
+    socket.emit('rooms-update', [{'id':id, 'isBooked':true}], function(resp){
+      console.log(resp);
+    });
+  }
+
+  function cancelRoomBooking(id){
+    socket.emit('rooms-update', [{'id':id, 'isBooked':false}], function(resp){
+      console.log(resp);
+    });
+  }
+
+  function renderRoomsView(rooms){
+
+    var template = document.getElementById('rooms-view-template').text || '';
+    // console.log('template:'+template);
+    var loginId = document.getElementById('loginId').value;
+    var output = Mustache.render(template, {'rooms':rooms, 'loginId':loginId});
+
+    document.getElementById('rooms-container').innerHTML = output;
+
+    // var table = document.createElement('table');
+    // var tr = document.createElement('tr');
+    // var td = document.createElement('td');
+
+    // table.style.width = '100%';
+
+    // rooms.forEach(function(room) {
+    //   var id = room.id;
+    //   var code = room.code;
+    //   var isBooked = room.isBooked;
+
+    //   var row = tr.cloneNode(true);
+
+    //   var idCell = td.cloneNode();
+    //   idCell.textContent = id;
+
+    //   var codeCell = td.cloneNode();
+    //   codeCell.textContent = code;
+
+    //   var isBookedCell = td.cloneNode();
+    //   isBookedCell.textContent = isBooked?'booked':'available';
+    //   isBookedCell.style.color = isBooked?'#ff0000':'';
+
+    //   var actionCell = 
+
+    //   [idCell, codeCell, isBookedCell].forEach(function (cell) {
+    //     row.appendChild(cell);
+    //   })
+    //   table.appendChild(row);
+    // }, this);
+
+    // document.getElementById('rooms').appendChild(table);
+  }
+
+  
 
   socket.on('rooms', function(rooms){
-    document.getElementById('rooms').innerHTML = JSON.stringify(rooms);
+    // document.getElementById('rooms').innerHTML = JSON.stringify(rooms);
+    renderRoomsView(rooms);
   })
 
   
