@@ -15,16 +15,18 @@ http.listen(3000, function(){
 });
 
 var accountList = [
-  {'id':'test', 'password':'pwd'}
-  ,{'id':'lwk', 'password':'pwd'}
+  {'id':'test', 'password':'test'},
+  {'id':'pyl', 'password':'pyl'},
+  {'id':'lwk', 'password':'lwk'},
+  {'id':'kcp', 'password':'kcp'}
 ];
 var rooms = [
-  {'id':'1', 'code':'001', 'isBooked':false, 'accountId':''}
-,{'id':'2', 'code':'002', 'isBooked':false, 'accountId':''}
-,{'id':'3', 'code':'003', 'isBooked':false, 'accountId':''}
-,{'id':'4', 'code':'004', 'isBooked':false, 'accountId':''}
-,{'id':'5', 'code':'005', 'isBooked':false, 'accountId':''}
-,{'id':'6', 'code':'006', 'isBooked':false, 'accountId':''}
+  {'id':'1', 'code':'101', 'isBooked':false, 'capacity': 1, 'accountId':'', }
+,{'id':'2', 'code':'102', 'isBooked':false, 'capacity': 2, 'accountId':''}
+,{'id':'3', 'code':'103', 'isBooked':false, 'capacity': 2, 'accountId':''}
+,{'id':'4', 'code':'201', 'isBooked':false, 'capacity': 4, 'accountId':''}
+,{'id':'5', 'code':'202', 'isBooked':false, 'capacity': 4, 'accountId':''}
+,{'id':'6', 'code':'203', 'isBooked':false, 'capacity': 1, 'accountId':''}
 ];
 
 var sessionList = {};

@@ -23,7 +23,6 @@
 		  <input type="password" class="textfield" name="password" id="password" placeholder="Please enter your password">
 		</div>
 		<button type="button" onclick="login()">Login</button>
-		
 		<div id="footer">
 		DCS Assignment <br />
 		Prepared By Group-603
@@ -42,6 +41,7 @@
           <tr>
             <th>ID</th>
             <th>Room No.</th>
+            <th>Capacity</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -49,6 +49,7 @@
           <tr>
             <td>{{id}}</td>
             <td>{{code}}</td>
+            <td>{{capacity}}</td>
             <td>
               {{#isBooked}}
                 <span class="booked">Booked</span>
@@ -68,6 +69,7 @@
           </tr>
           {{/rooms}}
         </table>
+        <button type="button" onclick="logout()">Logout</button>
   </script>
 
 </body>
@@ -135,6 +137,18 @@
     socket.emit('rooms-update', [{'id':id, 'isBooked':true}], function(resp){
       console.log(resp);
     });
+  }
+  function logout(){
+    window.location.reload();
+    // socket.disconnect();
+
+      // document.getElementById('loginErrMsg').innerHTML="";
+      // document.getElementById('loginErrMsg').style.display="none";
+      //   alert('Logout success');
+      //   document.getElementById('loginFrm').style.display="block";
+    
+//    document.getElementById('welcomeMsg').innerHTML="Welcome, <b>"+loginId+"</b>"+logoutButton;
+//    document.getElementById('welcomeMsg').style.display="block";
   }
 
   function cancelRoomBooking(id){
