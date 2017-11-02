@@ -13,9 +13,9 @@ e.g. cd /Users/lwk/git/dcs-assignment
 
 Make sure there is a file "package.json" in project root folder
 
-install project depenedncies
+install project dependencies
 ```
-node install
+npm install
 ```
 
 run application
