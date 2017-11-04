@@ -246,13 +246,47 @@ io.on('connection', function(socket){
         session.accountId = loginAccount.id;
 
         sessionList[socketId] = session;
-        socket.join('loggedInUser', () => {
-          // let rooms = Object.keys(socket.rooms);
-          // console.log(rooms); // [ <socket.id>, 'room 237' ]
-           // broadcast to everyone in the room
-          //  io.to('loggedInUser').emit('rooms', rooms);
 
-        });
+        // var client = io.sockets.connected;
+        // console.log(client);
+
+        // var client = io.sockets.connected[clientId];
+        // console.log('clientId:'+client.id);
+    
+        // if(sessionList[client.id]){
+        //   var accountId = sessionList[client.id].accountId;
+        //   console.log('accountId:'+accountId);
+          
+        //   client.emit('rooms', buildRespRooms(sessionList[client.id].accountId));
+        // }
+
+        var allConnectedSockets = io.sockets.connected;
+        
+
+        for (var connectedSocketId in allConnectedSockets) {
+         
+            var connectedSocket = allConnectedSockets[connectedSocketId];
+
+            if(sessionList[connectedSocketId]){
+              var accountId = sessionList[connectedSocketId].accountId;
+              console.log('accountId:'+accountId);
+              
+              if(accountId == session.accountId){
+                connectedSocket.join('loggedInUser', () => {
+                  // let rooms = Object.keys(socket.rooms);
+                  // console.log(rooms); // [ <socket.id>, 'room 237' ]
+                   // broadcast to everyone in the room
+                  //  io.to('loggedInUser').emit('rooms', rooms);
+        
+                });
+              }
+              
+            }
+          
+        }
+
+
+        
 
         socket.emit('rooms', buildRespRooms(session.accountId));
         return;
