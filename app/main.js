@@ -190,8 +190,8 @@ io.on('connection', function(socket){
 		//recovery session
 		console.log('recovery session');
 		sessionList[socketId] = sessionList[clientSessionId];
-    sessionList[clientSessionId] = null;
-    delete sessionList[clientSessionId];
+    // sessionList[clientSessionId] = null;
+    // delete sessionList[clientSessionId];
 		socket.join('loggedInUser', () => {
 			
 		});
