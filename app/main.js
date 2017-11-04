@@ -144,12 +144,19 @@ function buildRespRooms(accountId){
 function broadcastRooms(){
   var clients = io.sockets.adapter.rooms['loggedInUser'].sockets;
 
+  console.log('broadcastRooms');
   for (var clientId in clients ) {
     //this is the socket of each client in the room.
     var client = io.sockets.connected[clientId];
     console.log('clientId:'+client.id);
-    console.log('accountId:'+sessionList[client.id].accountId);
-    client.emit('rooms', buildRespRooms(sessionList[client.id].accountId));
+
+    if(sessionList[client.id]){
+      var accountId = sessionList[client.id].accountId;
+      console.log('accountId:'+accountId);
+      
+      client.emit('rooms', buildRespRooms(sessionList[client.id].accountId));
+    }
+    
   }
 }
 
@@ -183,7 +190,8 @@ io.on('connection', function(socket){
 		//recovery session
 		console.log('recovery session');
 		sessionList[socketId] = sessionList[clientSessionId];
-		sessionList[clientSessionId] = null;
+    sessionList[clientSessionId] = null;
+    delete sessionList[clientSessionId];
 		socket.join('loggedInUser', () => {
 			
 		});
@@ -220,6 +228,7 @@ io.on('connection', function(socket){
   // });
 
   socket.on('login', function(loginAccount, resp){
+    console.log('login');
     console.log('socketId:'+socketId);
     console.log(loginAccount);
     var success = false;
@@ -236,6 +245,7 @@ io.on('connection', function(socket){
         success = true;
         session.accountId = loginAccount.id;
 
+        sessionList[socketId] = session;
         socket.join('loggedInUser', () => {
           // let rooms = Object.keys(socket.rooms);
           // console.log(rooms); // [ <socket.id>, 'room 237' ]
@@ -256,6 +266,7 @@ io.on('connection', function(socket){
   });
 
   socket.on('rooms-update', function(req, resp){
+    console.log('rooms-update')
     loginFilter(function(bookings, resp){
       var success = false;
       try {
