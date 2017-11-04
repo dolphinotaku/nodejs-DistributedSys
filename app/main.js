@@ -163,7 +163,7 @@ function broadcastRooms(){
 // });
 
 function findCookieSessionId(cookieStr){
-	var cookies = cookieStr.split(';');
+	var cookies = cookieStr?cookieStr.split(';'):[];
 	for(var i=0,length=cookies.length;i<length;i++){
 		if(cookies[i].startsWith('io=')){
 			return cookies[i].substring(3);
