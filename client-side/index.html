@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Room Booking System by G603</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="lib/mustache/mustache.min.js"></script>
+</script>
+</head>
+<body>
+  <div id="loginFrm">
+  <div id="background_container" class="ie_legacy">
+	<img id="background_background_image" src="img/meeting-rm-cover.jpg">
+  </div>
+  <div id="loginPanel">
+		Room Booking System
+		<div id="loginErrMsg" class="err_msg">The username you entered cannot be identified.</div>
+		<div>
+		  <input type="text" class="textfield" name="loginId" id="loginId" placeholder="Username">
+		</div>
+		<div>
+		  <input type="password" class="textfield" name="password" id="password" placeholder="Please enter your password">
+		</div>
+		<button type="button" onclick="login()">Login</button>
+		<div id="footer">
+		DCS Assignment <br />
+		Prepared By Group-603 <br />
+		2017
+		</div>
+  </div>
+  </div>
+
+
+  <div id="welcomeMsg">
+  </div>
+  <div id="rooms-container">
+  </div>
+
+  <script id="rooms-view-template" type="x-tmpl-mustache">
+      <table id="rooms">
+          <tr>
+            <th>ID</th>
+            <th>Room No.</th>
+			<th>Type</th>
+			<th>Equipment</th>
+            <th>Capacity</th>
+			<th class="mw100">Time Slot</th>
+            <th class="mw100">Status</th>
+            <th>Action</th>
+          </tr>
+          {{#rooms}}
+          <tr>
+            <td>{{id}}</td>
+            <td>{{code}}</td>
+			<td>{{type}} room</td>
+			<td>{{equip}}</td>
+            <td>{{capacity}}</td>
+			<td>
+				{{#timeSlots}}
+				<div class="row">
+					<div class="col">
+						{{time}}
+					</div>
+				</div>
+				{{/timeSlots}}
+			</td>
+            <td>
+				{{#timeSlots}}
+				<div class="row">
+					<div class="col">
+						{{#isBooked}}
+						<span class="booked">Booked</span>
+						(<span class="bold">{{accountId}}</span>)
+						{{/isBooked}}
+						{{^isBooked}}
+						<span>Available</span>
+						{{/isBooked}}
+					</div>
+				</div>
+				{{/timeSlots}}
+            </td>
+			<td class="text-center">
+				{{#timeSlots}}
+				<div class="row">
+					<div class="col">
+						{{#canCancel}}
+						<button type="button" onclick="cancelRoomBooking({{roomId}}, {{timeSlotId}})">Cancel</button>
+						{{/canCancel}}
+						{{^isBooked}}
+						<button type="button" onclick="bookRoom({{roomId}}, {{timeSlotId}})">Book</button>
+						{{/isBooked}}
+					</div>
+				</div>
+				{{/timeSlots}}
+			</td>
+          </tr>
+          {{/rooms}}
+        </table>
+  </script>
+
+</body>
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io();
+
+  // setInterval(function(){
+    // socket.emit('client',new Date().getTime());
+  // }, 1000);
+  function login(){
+    var loginId = document.getElementById('loginId').value;
+    var password = document.getElementById('password').value;
+    var account = {'id':loginId, 'password': password};
+    console.log(account);
+
+	var logoutButton = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button type="button" onclick="logout()">Logout</button>';
+	//var logoutButton = '';
+
+    socket.emit('login', account, function(resp){
+      console.log(resp);
+      if(resp.success){
+	    document.getElementById('loginErrMsg').innerHTML="";
+	    document.getElementById('loginErrMsg').style.display="none";
+        alert('Login success');
+		document.getElementById('loginFrm').style.display="none";
+
+		document.getElementById('welcomeMsg').innerHTML="Welcome, <b>"+loginId+"</b>"+logoutButton;
+		document.getElementById('welcomeMsg').style.display="block";
+      }else{
+        //alert('Login Fail');
+		document.getElementById('loginErrMsg').innerHTML="The username or password you entered are incorrect.";
+		document.getElementById('loginErrMsg').style.display="block";
+      }
+    });
+  }
+
+/*  function logout(){
+    var loginId = document.getElementById('loginId').value;
+    var password = document.getElementById('password').value;
+    var account = {'id':loginId, 'password': password};
+    console.log(account);
+
+	socket.emit('logout', account, function(resp){
+      console.log(resp);
+      if(resp.success){
+	    document.getElementById('loginErrMsg').innerHTML="";
+	    document.getElementById('loginErrMsg').style.display="none";
+        alert('Logout success');
+		document.getElementById('loginFrm').style.display="block";
+
+//		document.getElementById('welcomeMsg').innerHTML="Welcome, <b>"+loginId+"</b>"+logoutButton;
+//		document.getElementById('welcomeMsg').style.display="block";
+      }else{
+        //alert('Login Fail');
+//		document.getElementById('loginErrMsg').innerHTML="The username or password you entered are incorrect.";
+//		document.getElementById('loginErrMsg').style.display="block";
+      }
+    });
+  }	*/
+
+  function bookRoom(roomId, timeSlotId){
+    socket.emit('rooms-update', [{'roomId':roomId, 'timeSlotId':timeSlotId, 'isBooked':true}], function(resp){
+      console.log(resp);
+    });
+  }
+  function logout(){
+    window.location.reload();
+    // socket.disconnect();
+
+      // document.getElementById('loginErrMsg').innerHTML="";
+      // document.getElementById('loginErrMsg').style.display="none";
+      //   alert('Logout success');
+      //   document.getElementById('loginFrm').style.display="block";
+
+//    document.getElementById('welcomeMsg').innerHTML="Welcome, <b>"+loginId+"</b>"+logoutButton;
+//    document.getElementById('welcomeMsg').style.display="block";
+  }
+
+  function cancelRoomBooking(roomId, timeSlotId){
+    socket.emit('rooms-update', [{'roomId':roomId, 'timeSlotId':timeSlotId, 'isBooked':false}], function(resp){
+      console.log(resp);
+    });
+  }
+
+  function renderRoomsView(rooms){
+
+    var template = document.getElementById('rooms-view-template').text || '';
+    // console.log('template:'+template);
+    var loginId = document.getElementById('loginId').value;
+
+		rooms.forEach(function(room){
+			room.roomId = room.id;
+			room.timeSlots.forEach(function(timeSlot){
+				timeSlot.timeSlotId = timeSlot.id;
+			})
+		})
+
+    var output = Mustache.render(template, {'rooms':rooms, 'loginId':loginId});
+
+    document.getElementById('rooms-container').innerHTML = output;
+
+    // var table = document.createElement('table');
+    // var tr = document.createElement('tr');
+    // var td = document.createElement('td');
+
+    // table.style.width = '100%';
+
+    // rooms.forEach(function(room) {
+    //   var id = room.id;
+    //   var code = room.code;
+    //   var isBooked = room.isBooked;
+
+    //   var row = tr.cloneNode(true);
+
+    //   var idCell = td.cloneNode();
+    //   idCell.textContent = id;
+
+    //   var codeCell = td.cloneNode();
+    //   codeCell.textContent = code;
+
+    //   var isBookedCell = td.cloneNode();
+    //   isBookedCell.textContent = isBooked?'booked':'available';
+    //   isBookedCell.style.color = isBooked?'#ff0000':'';
+
+    //   var actionCell =
+
+    //   [idCell, codeCell, isBookedCell].forEach(function (cell) {
+    //     row.appendChild(cell);
+    //   })
+    //   table.appendChild(row);
+    // }, this);
+
+    // document.getElementById('rooms').appendChild(table);
+  }
+
+
+
+  socket.on('rooms', function(rooms){
+    // document.getElementById('rooms').innerHTML = JSON.stringify(rooms);
+    renderRoomsView(rooms);
+  })
+
+/*  $(function() {
+    $("#loginPanel input").keypress(function (e) {
+        if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
+            //$('button[type=submit] .default').click();
+			login();
+            return false;
+        } else {
+            return true;
+        }
+    });
+  });	*/
+</script>
+</html>
