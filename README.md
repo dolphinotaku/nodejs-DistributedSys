@@ -20,8 +20,15 @@ npm install
 
 run application
 ```
-node ./app/main.js
+node ./app/main.js ${selfPort} ${anotherServerPort}
+```
+e.g.
+```
+#first server
+node ./app/main.js 3000 13000
+#second server
+node ./app/main.js 13000 3000
 ```
 
 Open browser and access
-http://127.0.0.1:3000/
+http://127.0.0.1:38080/
