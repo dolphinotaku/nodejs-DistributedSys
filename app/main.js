@@ -1,7 +1,9 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var ioBrowser = require('socket.io')(http);
+
+
 
 app.use(express.static(__dirname+'/client-side'));
 
@@ -10,9 +12,123 @@ app.use(express.static(__dirname+'/client-side'));
 //   res.sendFile(__dirname+'/css/index2.html');
 // });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+
+var selfPort = process.argv[2] || 3000;
+var remotePort = process.argv[3] || 13000;
+process.argv.forEach(function(val, index, array){
+	console.log(index+': '+val);
 });
+
+var serverStatus = 'pending';
+
+var serverSocketList = [];
+var io = require('socket.io')(selfPort);
+io.set('transports', ['websocket']);
+
+io.on('connection', function (serverSocket) {
+    // serverSocket.emit('syncAccountList', accountList);
+    // serverSocket.on('syncAccountList', function (data) {
+		// 	console.log('syncAccountList-1');
+    //     console.log(data);
+    // });
+		// serverSocket.emit('bootstrap', {main:true} , function(data){
+		//
+		// });
+
+		serverSocketList.push(serverSocket);
+		serverSocket.on('serverStatus', function(req, resp){
+			resp({status:serverStatus})
+		});
+});
+
+setInterval(function(){
+	if (serverStatus =='main') {
+		for(let i =0; i<serverSocketList.length; i++){
+			var backupServer = serverSocketList[i];
+			backupServer.emit('syncAccountList', accountList, function(data){
+				console.log('emit syncAccountList response:'+JSON.stringify(data));
+			});
+			backupServer.emit('syncSessionList', sessionList, function(data){
+				console.log('emit syncSessionList response:'+JSON.stringify(data));
+			});
+			backupServer.emit('syncRoomsList', rooms, function(data){
+				console.log('emit syncRoomsList response:'+JSON.stringify(data));
+			});
+		}
+	}
+}, 2000);
+
+
+var remoteServerSocket = require('socket.io-client').connect('http://localhost:'+remotePort, {
+    reconnection: true,
+		transports: ['websocket']
+});
+remoteServerSocket.on('connect', function () {
+	console.log('connectioned to another server');
+	// socketServer.on('bootstrap', function(data){
+	// 	console.log('from another server:'+JSON.stringify(data));
+	// });
+	remoteServerSocket.emit('serverStatus', {}, function(data){
+		console.log('remote server status:'+JSON.stringify(data));
+		if (data.status == 'main') {
+			console.log('another server is main server');
+			console.log('set self status to "backup"');
+			serverStatus = 'backup';
+			bindSyncFunction();
+		}
+	});
+
+	function bindSyncFunction(){
+		remoteServerSocket.on('syncAccountList', function(data){
+			console.log('syncAccountList from main server');
+			// console.log(data);
+			accountList = data;
+		});
+		remoteServerSocket.on('syncSessionList', function(data){
+			console.log('syncSessionList from main server');
+			console.log(data);
+			sessionList = data;
+		});
+		remoteServerSocket.on('syncRoomsList', function(data){
+			console.log('syncAccountList from main server');
+			// console.log(data);
+			rooms = data;
+		});
+	}
+});
+remoteServerSocket.on('connect_error', function() {
+    console.log('Failed to connect to server');
+		console.log('set self status to "main"');
+		if (serverStatus != 'main') {
+			http.listen('38080', function(){
+				console.log('listening on *:'+38080);
+			});
+		}
+		serverStatus = 'main';
+});
+
+remoteServerSocket.on('disconnect', function(){
+	console.log('remoteServerSocket discounnect');
+	console.log('set self status to "main"');
+	if (serverStatus != 'main') {
+		http.listen('38080', function(){
+			console.log('listening on *:'+38080);
+		});
+	}
+	serverStatus = 'main';
+})
+
+
+// console.log('emitResponse:'+emitResponse);
+// console.log('connected:'+emitResponse.connected);
+// setInterval(function(){
+// 	console.log('connected:'+emitResponse.connected);
+// }, 1000);
+
+
+
+
+
 
 var accountList = [
   {'id':'test', 'password':'test'},
@@ -153,10 +269,10 @@ function broadcastRooms(){
     if(sessionList[client.id]){
       var accountId = sessionList[client.id].accountId;
       console.log('accountId:'+accountId);
-      
+
       client.emit('rooms', buildRespRooms(sessionList[client.id].accountId));
     }
-    
+
   }
 }
 
@@ -172,16 +288,18 @@ function broadcastRooms(){
 function findCookieSessionId(cookieStr){
 	var cookies = cookieStr?cookieStr.split(';'):[];
 	for(var i=0,length=cookies.length;i<length;i++){
-		if(cookies[i].startsWith('io=')){
-			return cookies[i].substring(3);
+		var cookiePair = cookies[i].split(/=(.+)/);
+		if(cookiePair[0].trim() == 'token'){
+			return cookiePair[1].trim();
 		}
 	}
 	return null;
 }
 
 io.on('connection', function(socket){
+	console.log(socket.handshake.headers.cookie);
 	var clientSessionId = findCookieSessionId(socket.handshake.headers.cookie)
-	console.log('client existing session id:'+clientSessionId);
+	console.log('client existing session id:'+clientSessionId+'; session:'+(sessionList[clientSessionId] && JSON.stringify(sessionList[clientSessionId])));
   // session.socket.id;
   var socketId = socket.id;
 	console.log('new session id:'+socketId);
@@ -193,10 +311,12 @@ io.on('connection', function(socket){
     // sessionList[clientSessionId] = null;
     // delete sessionList[clientSessionId];
 		socket.join('loggedInUser', () => {
-			
+
 		});
 
 		socket.emit('rooms', buildRespRooms(sessionList[socketId].accountId));
+		socket.emit('token', socketId);
+
 	}else{
 		sessionList[socketId] = {'accountId':null};
 	}
@@ -252,41 +372,44 @@ io.on('connection', function(socket){
 
         // var client = io.sockets.connected[clientId];
         // console.log('clientId:'+client.id);
-    
+
         // if(sessionList[client.id]){
         //   var accountId = sessionList[client.id].accountId;
         //   console.log('accountId:'+accountId);
-          
+
         //   client.emit('rooms', buildRespRooms(sessionList[client.id].accountId));
         // }
 
         var allConnectedSockets = io.sockets.connected;
-        
+
 
         for (var connectedSocketId in allConnectedSockets) {
-         
+
             var connectedSocket = allConnectedSockets[connectedSocketId];
 
             if(sessionList[connectedSocketId]){
               var accountId = sessionList[connectedSocketId].accountId;
               console.log('accountId:'+accountId);
-              
+
               if(accountId == session.accountId){
                 connectedSocket.join('loggedInUser', () => {
                   // let rooms = Object.keys(socket.rooms);
                   // console.log(rooms); // [ <socket.id>, 'room 237' ]
                    // broadcast to everyone in the room
                   //  io.to('loggedInUser').emit('rooms', rooms);
-        
+
                 });
+								if (serverStatus == 'main') {
+									connectedSocket.emit('token', socketId);
+								}
               }
-              
+
             }
-          
+
         }
 
 
-        
+
 
         socket.emit('rooms', buildRespRooms(session.accountId));
         return;
@@ -334,7 +457,7 @@ io.on('connection', function(socket){
   socket.on('rooms', function(req, resp){
     loginFilter(function(req, resp){
       resp(buildRespRooms(session.accountId));
-    })(req, resp);;
+    })(req, resp);
   });
 
 });

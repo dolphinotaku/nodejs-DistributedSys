@@ -99,8 +99,51 @@
 
 
 <script src="/socket.io/socket.io.js"></script>
-<script>
-  var socket = io();
+<script type="text/javascript">
+	var serverUrlList = ['http://localhost:3000', 'http://localhost:13000']
+  var socket = null;
+	var finishBoostrap = false;
+	bootstrap();
+	function bootstrap(){
+		serverUrlList.forEach(function(serverUrl){
+			(function(serverUrl){
+				var serverStatus = 'pending';
+				var tempSocket = io(serverUrl, {
+				 reconnection:false,
+				 transports: ['websocket']
+			 });
+			 tempSocket.on('connect', function(){
+				 tempSocket.emit('serverStatus', {}, function(data){
+			 		console.log(serverUrl+' server status:'+JSON.stringify(data));
+					serverStatus = data.status;
+			 		if (serverStatus == 'main') {
+						socket = tempSocket;
+						bindSocketReceiverEvent(socket);
+			 		}else{
+						tempSocket.disconnect();
+					}
+			 	});
+			});
+			tempSocket.on('disconnect', function(){
+				if(serverStatus == 'main'){
+					bootstrap();
+				}
+			});
+			tempSocket.on('token', function(token){
+				document.cookie='token='+token;
+			});
+			})(serverUrl);
+		});
+	}
+
+	function bindSocketReceiverEvent(socket){
+		console.log('bind socket receive server event');
+		socket.on('rooms', function(rooms){
+	    // document.getElementById('rooms').innerHTML = JSON.stringify(rooms);
+	    renderRoomsView(rooms);
+	  });
+	}
+
 
   // setInterval(function(){
     // socket.emit('client',new Date().getTime());
@@ -233,10 +276,7 @@
 
 
 
-  socket.on('rooms', function(rooms){
-    // document.getElementById('rooms').innerHTML = JSON.stringify(rooms);
-    renderRoomsView(rooms);
-  })
+
 
 /*  $(function() {
     $("#loginPanel input").keypress(function (e) {
@@ -250,4 +290,11 @@
     });
   });	*/
 </script>
+<!-- <script type="text/javascript">
+	var socket2 = io.connect('http://localhost:13000');
+	    socket2.on('news', function (data) {
+	        console.log(data);
+	        socket2.emit('my other event', { my: 'data' });
+	    });
+</script> -->
 </html>
