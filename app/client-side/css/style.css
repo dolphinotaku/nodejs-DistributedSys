@@ -59,6 +59,7 @@ div#background_container {
     -ms-transition: opacity 1s;
     transition-property: opacity;
     transition-duration: 1s;
+    background-color:white;
 }
 
 #loginPanel {
@@ -105,9 +106,11 @@ div#background_container {
     padding: 8px;
 }
 
-#rooms tr:nth-child(even){background-color: #f2f2f2;}
+#rooms tr:nth-child(2n+1){background-color: #f2f2f2;}
 
 #rooms tr:hover {background-color: #ddd;}
+#rooms tr:hover td{border-color: #ffffff;}
+
 
 #rooms th {
     padding-top: 12px;
@@ -122,4 +125,24 @@ div#background_container {
 
 .text-center{
     text-align: center;
+}
+
+#rooms .time-slots{
+    width: 100%;
+    border-collapse: collapse;
+}
+#rooms .time-slots-container{
+    padding: 0;
+}
+
+#rooms button{
+    width: 100%;
+}
+
+.book-btn{
+    color:green;
+}
+
+.cancel-btn{
+    color:red;
 }

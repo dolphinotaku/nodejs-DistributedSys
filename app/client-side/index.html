@@ -48,48 +48,40 @@
           </tr>
           {{#rooms}}
           <tr>
-            <td>{{id}}</td>
-            <td>{{code}}</td>
-            <td>{{capacity}}</td>
-						<td>
-							{{#timeSlots}}
-							<div className="row">
-								<div className="col">
-								{{time}}
-								</div>
-							</div>
-							{{/timeSlots}}
-						</td>
-            <td>
-							{{#timeSlots}}
-							<div className="row">
-								<div className="col">
-								{{#isBooked}}
-	                <span class="booked">Booked</span>
-									(<span class="bold">{{accountId}}</span>)
-	              {{/isBooked}}
-	              {{^isBooked}}
-	                <span>Available</span>
-	              {{/isBooked}}
-								</div>
-							</div>
-							{{/timeSlots}}
-            </td>
-						<td class="text-center">
-							{{#timeSlots}}
-							<div className="row">
-								<div className="col">
-									{{#canCancel}}
-									<button type="button" onclick="cancelRoomBooking({{roomId}}, {{timeSlotId}})">Cancel</button>
-									{{/canCancel}}
-									{{^isBooked}}
-									<button type="button" onclick="bookRoom({{roomId}}, {{timeSlotId}})">Book</button>
-									{{/isBooked}}
-								</div>
-							</div>
-							{{/timeSlots}}
-						</td>
+            <td rowspan="10">{{id}}</td>
+            <td rowspan="10">{{code}}</td>
+            <td rowspan="10">{{capacity}}</td>            
+            
           </tr>
+          {{#timeSlots}}
+          <tr>
+              
+              <td>
+                {{time}}
+              </td>
+              <td>
+                  {{#isBooked}}
+                  <span class="booked">Booked</span>
+                  (<span class="bold">{{accountId}}</span>)
+                {{/isBooked}}
+                {{^isBooked}}
+                  <span>Available</span>
+                {{/isBooked}}
+              </td>
+              <td>
+                  {{#canCancel}}
+                  <button type="button" class="cancel-btn" onclick="cancelRoomBooking({{roomId}}, {{timeSlotId}})">Cancel</button>
+                  {{/canCancel}}
+                  {{^isBooked}}
+                  <button type="button" class="book-btn" onclick="bookRoom({{roomId}}, {{timeSlotId}})">Book</button>
+                  {{/isBooked}}
+
+              </td>
+              
+
+
+          </tr>
+          {{/timeSlots}}
           {{/rooms}}
         </table>
         <button type="button" onclick="logout()">Logout</button>
