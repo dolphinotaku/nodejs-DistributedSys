@@ -37,6 +37,14 @@ setInterval(function(){
 	if (serverStatus =='main') {
 		for(let i =0; i<serverSocketList.length; i++){
 			var backupServer = serverSocketList[i];
+			
+			console.log('syncSessionList to backup server');
+			console.log(sessionList);
+			console.log('syncRoomsList to backup server');
+			rooms.forEach(function(item) {
+				console.log(item);
+			});
+			console.log('server mode:'+serverStatus);
 			backupServer.emit('syncAccountList', accountList, function(data){
 				console.log('emit syncAccountList response:'+JSON.stringify(data));
 			});
@@ -73,21 +81,23 @@ remoteServerSocket.on('connect', function () {
 
 	function bindSyncFunction(){
 		remoteServerSocket.on('syncAccountList', function(data){
-
 			accountList = data;
+			console.log('server mode:'+serverStatus);
 		});
 		remoteServerSocket.on('syncSessionList', function(data){
 			console.log('syncSessionList from main server');
 			console.log(data);
 			sessionList = data;
+			console.log('server mode:'+serverStatus);
 		});
 		remoteServerSocket.on('syncRoomsList', function(data){
 			console.log('syncRoomsList from main server');
 			// console.log(data);
 			data.forEach(function(item) {
 				console.log(item);
-			})
+			});
 			rooms = data;
+			console.log('server mode:'+serverStatus);
 		});
 	}
 });
@@ -358,8 +368,6 @@ io.on('connection', function(socket){
         }
 
 
-
-
         socket.emit('rooms', buildRespRooms(session.accountId));
         return;
       }
@@ -371,7 +379,7 @@ io.on('connection', function(socket){
 
 	//booking function access point
   socket.on('rooms-update', function(req, resp){
-    console.log('rooms-update')
+    console.log('rooms-update');
     loginFilter(function(bookings, resp){
       var success = false;
       try {
@@ -380,11 +388,14 @@ io.on('connection', function(socket){
 					var timeSlot = findTimeSlot(room, booking.timeSlotId);
           if(timeSlot){
             if(timeSlot.isBooked && timeSlot.accountId == session.accountId){
-              timeSlot.isBooked = false;
+							timeSlot.isBooked = false;
+							timeSlot.accountId = '';
+							timeSlot.canCancel = false;
             }else if(!timeSlot.isBooked){
 
               timeSlot.isBooked = true;
-              timeSlot.accountId = session.accountId;
+							timeSlot.accountId = session.accountId;
+							timeSlot.canCancel = true;
             }
 
           }
