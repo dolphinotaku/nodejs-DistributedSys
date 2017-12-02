@@ -84,7 +84,7 @@
           {{/timeSlots}}
           {{/rooms}}
         </table>
-        <button type="button" onclick="logout()">Logout</button>
+        
   </script>
 
 </body>
@@ -147,7 +147,7 @@
     console.log(account);
 
 	//var logoutButton = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button type="button" onclick="logout()">Logout</button>';
-	var logoutButton = '';
+	var logoutButton = '<button type="button" onclick="logout()">Logout</button>';
 
     socket.emit('login', account, function(resp){
       console.log(resp);
