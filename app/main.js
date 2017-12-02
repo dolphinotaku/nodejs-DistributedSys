@@ -8,9 +8,6 @@ var ioBrowser = require('socket.io')(http);
 app.use(express.static(__dirname+'/client-side'));
 
 
-// app.get('/css', function(req, res){
-//   res.sendFile(__dirname+'/css/index2.html');
-// });
 
 
 var selfPort = process.argv[2] || 3000;
@@ -25,15 +22,8 @@ var serverSocketList = [];
 var io = require('socket.io')(selfPort);
 io.set('transports', ['websocket']);
 
+//access point for other server
 io.on('connection', function (serverSocket) {
-    // serverSocket.emit('syncAccountList', accountList);
-    // serverSocket.on('syncAccountList', function (data) {
-		// 	console.log('syncAccountList-1');
-    //     console.log(data);
-    // });
-		// serverSocket.emit('bootstrap', {main:true} , function(data){
-		//
-		// });
 
 		serverSocketList.push(serverSocket);
 		serverSocket.on('serverStatus', function(req, resp){
@@ -41,6 +31,8 @@ io.on('connection', function (serverSocket) {
 		});
 });
 
+
+//sync data to backup server
 setInterval(function(){
 	if (serverStatus =='main') {
 		for(let i =0; i<serverSocketList.length; i++){
@@ -56,18 +48,19 @@ setInterval(function(){
 			});
 		}
 	}
-}, 2000);
+}, 1000);
 
 
+//connect to other server
 var remoteServerSocket = require('socket.io-client').connect('http://localhost:'+remotePort, {
     reconnection: true,
 		transports: ['websocket']
 });
 remoteServerSocket.on('connect', function () {
 	console.log('connectioned to another server');
-	// socketServer.on('bootstrap', function(data){
-	// 	console.log('from another server:'+JSON.stringify(data));
-	// });
+
+
+	//query server mode from other server
 	remoteServerSocket.emit('serverStatus', {}, function(data){
 		console.log('remote server status:'+JSON.stringify(data));
 		if (data.status == 'main') {
@@ -80,8 +73,7 @@ remoteServerSocket.on('connect', function () {
 
 	function bindSyncFunction(){
 		remoteServerSocket.on('syncAccountList', function(data){
-			console.log('syncAccountList from main server');
-			// console.log(data);
+
 			accountList = data;
 		});
 		remoteServerSocket.on('syncSessionList', function(data){
@@ -90,12 +82,16 @@ remoteServerSocket.on('connect', function () {
 			sessionList = data;
 		});
 		remoteServerSocket.on('syncRoomsList', function(data){
-			console.log('syncAccountList from main server');
+			console.log('syncRoomsList from main server');
 			// console.log(data);
+			data.forEach(function(item) {
+				console.log(item);
+			})
 			rooms = data;
 		});
 	}
 });
+//detect other server has connect error, if yes, then switch this server to Primary server
 remoteServerSocket.on('connect_error', function() {
     console.log('Failed to connect to server');
 		console.log('set self status to "main"');
@@ -106,7 +102,7 @@ remoteServerSocket.on('connect_error', function() {
 		}
 		serverStatus = 'main';
 });
-
+//detect other server is disconnet, if yes, then switch this server to Primary server
 remoteServerSocket.on('disconnect', function(){
 	console.log('remoteServerSocket discounnect');
 	console.log('set self status to "main"');
@@ -118,12 +114,6 @@ remoteServerSocket.on('disconnect', function(){
 	serverStatus = 'main';
 })
 
-
-// console.log('emitResponse:'+emitResponse);
-// console.log('connected:'+emitResponse.connected);
-// setInterval(function(){
-// 	console.log('connected:'+emitResponse.connected);
-// }, 1000);
 
 
 
@@ -233,23 +223,12 @@ function findTimeSlot(room, id){
 	return result;
 }
 
-// function broadcastToLoggedInUsers(){
-//   var loggedIdList = [];
-//   for (var socketId in sessionList) {
-//     if (sessionList.hasOwnProperty(sessionId)) {
-//       var session = sessionList[socketId];
-//       if(session.accountId != null && session.accountId != undefined){
-//         loggedIdList.push(socketId);
-//       }
-//     }
-//   }
 
-// }
 
 function buildRespRooms(accountId){
   let respRooms = rooms.slice(0);//clone array
   respRooms.forEach(function(room){
-    // console.log(room.accountId == session.accountId);
+
 		room.timeSlots.forEach(function(timeSlot){
 			timeSlot.canCancel = (timeSlot.accountId == accountId) && timeSlot.isBooked;
 		})
@@ -276,14 +255,7 @@ function broadcastRooms(){
   }
 }
 
-// io.use((socket, next) => {
-//   let clientId = socket.handshake.headers['x-clientid'];
-//   if (clientId) {
-//   	// session
-// 		socket.id = clientId;
-//   }
-//   return next();
-// });
+
 
 function findCookieSessionId(cookieStr){
 	var cookies = cookieStr?cookieStr.split(';'):[];
@@ -296,11 +268,13 @@ function findCookieSessionId(cookieStr){
 	return null;
 }
 
+
+//client function access point
 io.on('connection', function(socket){
 	console.log(socket.handshake.headers.cookie);
 	var clientSessionId = findCookieSessionId(socket.handshake.headers.cookie)
 	console.log('client existing session id:'+clientSessionId+'; session:'+(sessionList[clientSessionId] && JSON.stringify(sessionList[clientSessionId])));
-  // session.socket.id;
+
   var socketId = socket.id;
 	console.log('new session id:'+socketId);
 
@@ -308,8 +282,6 @@ io.on('connection', function(socket){
 		//recovery session
 		console.log('recovery session');
 		sessionList[socketId] = sessionList[clientSessionId];
-    // sessionList[clientSessionId] = null;
-    // delete sessionList[clientSessionId];
 		socket.join('loggedInUser', () => {
 
 		});
@@ -343,23 +315,16 @@ io.on('connection', function(socket){
     console.log('user disconnected');
   });
 
-  // socket.on('client', function(msg){
-  //   console.log('message: ' + msg);
-  // });
 
+
+	//login function
   socket.on('login', function(loginAccount, resp){
     console.log('login');
     console.log('socketId:'+socketId);
     console.log(loginAccount);
     var success = false;
-    // for (var i = 0,length = accountList.length; i < length; i++) {
-    //   var account = accountList[i];
-    //   if(account.id===loginAccount.id && account.password === loginAccount.password){
-    //     success = true;
-    //     break;
-    //   }
-    // }
 
+		//sync the token when user login at the same browser twice times in different tabs
     accountList.forEach(function(account) {
       if(account.id===loginAccount.id && account.password === loginAccount.password){
         success = true;
@@ -367,18 +332,6 @@ io.on('connection', function(socket){
 
         sessionList[socketId] = session;
 
-        // var client = io.sockets.connected;
-        // console.log(client);
-
-        // var client = io.sockets.connected[clientId];
-        // console.log('clientId:'+client.id);
-
-        // if(sessionList[client.id]){
-        //   var accountId = sessionList[client.id].accountId;
-        //   console.log('accountId:'+accountId);
-
-        //   client.emit('rooms', buildRespRooms(sessionList[client.id].accountId));
-        // }
 
         var allConnectedSockets = io.sockets.connected;
 
@@ -393,10 +346,6 @@ io.on('connection', function(socket){
 
               if(accountId == session.accountId){
                 connectedSocket.join('loggedInUser', () => {
-                  // let rooms = Object.keys(socket.rooms);
-                  // console.log(rooms); // [ <socket.id>, 'room 237' ]
-                   // broadcast to everyone in the room
-                  //  io.to('loggedInUser').emit('rooms', rooms);
 
                 });
 								if (serverStatus == 'main') {
@@ -417,11 +366,10 @@ io.on('connection', function(socket){
     }, this);
     wrapResp(resp, success);
 
-    // rooms[0].isBooked = true;
-    // socket.emit('rooms', rooms);
-    // io.sockets.emit('rooms', rooms);
   });
 
+
+	//booking function access point
   socket.on('rooms-update', function(req, resp){
     console.log('rooms-update')
     loginFilter(function(bookings, resp){
@@ -442,9 +390,6 @@ io.on('connection', function(socket){
           }
         });
 
-        // io.sockets.emit('rooms', rooms);
-        // io.to('loggedInUser').emit('rooms', rooms);
-
         broadcastRooms();
       } catch (error) {
         console.log(error);
@@ -454,6 +399,7 @@ io.on('connection', function(socket){
     })(req, resp);
   });
 
+	//query rooms data function access point
   socket.on('rooms', function(req, resp){
     loginFilter(function(req, resp){
       resp(buildRespRooms(session.accountId));
