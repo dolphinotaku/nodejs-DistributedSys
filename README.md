@@ -31,4 +31,4 @@ node ./app/main.js 13000 3000
 ```
 
 Open browser and access
-http://127.0.0.1:38080/
+http://localhost:38080/
